@@ -390,8 +390,8 @@ Thầy sẽ yêu cầu 1-2 trong các đề sau:
 
 | Loại | Ví dụ câu hỏi |
 |------|---------------|
-| **Luồng** | "Dữ liệu này xuất hiện ở đâu? Đi qua những bước nào?" |
-| **Function/API** | "Code xử lý tìm kiếm ở file nào, dòng nào?" |
+| **Luồng** | "Dữ liệu này xuất hiện ở đâu? Đi qua những bước nào? Vào database bảng nào?" |
+| **Function/API** | "Code xử lý tìm kiếm ở file nào, function nào, dòng nào?" |
 | **SQL** | "Viết query thống kê số lần cảnh báo trong tháng" |
 
 #### Chuẩn Bị Bảo Vệ
