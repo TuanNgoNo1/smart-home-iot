@@ -9,8 +9,7 @@ const getActionHistory = async (req, res) => {
     const {
       device_id,
       status,
-      from,
-      to,
+      action,
       search,
       page = 1,
       pageSize = 10,
@@ -36,14 +35,9 @@ const getActionHistory = async (req, res) => {
       params.push(status.toUpperCase());
     }
 
-    if (from) {
-      conditions.push('ah.created_at >= ?');
-      params.push(from);
-    }
-
-    if (to) {
-      conditions.push('ah.created_at <= ?');
-      params.push(to);
+    if (action && action !== 'all') {
+      conditions.push('ah.action = ?');
+      params.push(action.toUpperCase());
     }
 
     // search: tìm theo ID, action, device name, chuỗi giờ
@@ -55,9 +49,10 @@ const getActionHistory = async (req, res) => {
         OR d.name LIKE ?
         OR DATE_FORMAT(ah.created_at, '%H:%i:%s') LIKE ?
         OR DATE_FORMAT(ah.created_at, '%Y-%m-%d') LIKE ?
+        OR DATE_FORMAT(ah.created_at, '%Y-%m-%d %H:%i:%s') LIKE ?
       )`);
       const searchPattern = `%${search}%`;
-      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';

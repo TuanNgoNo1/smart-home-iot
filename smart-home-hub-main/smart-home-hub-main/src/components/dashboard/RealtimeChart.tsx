@@ -35,7 +35,7 @@ export const RealtimeChart = ({ data }: RealtimeChartProps) => {
   const isEmpty = !data || data.length === 0;
 
   return (
-    <div className="chart-container h-[400px] flex flex-col shadow-lg">
+    <div className="chart-container h-full flex flex-col shadow-lg">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Biểu đồ thời gian thực</h2>

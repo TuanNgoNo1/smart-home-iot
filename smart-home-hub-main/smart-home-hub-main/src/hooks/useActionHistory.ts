@@ -9,6 +9,7 @@ export type ActionStatus = "WAITING" | "SUCCESS" | "FAILED" | "TIMEOUT";
 export interface ActionHistoryFilters {
   deviceType: string; // device_id or "all"
   status: string;     // ActionStatus or "all"
+  action: string;     // "ON" | "OFF" | "all"
   search: string;
   fromDate: string;
   toDate: string;
@@ -20,9 +21,8 @@ export interface ActionHistoryFilters {
 const defaultFilters: ActionHistoryFilters = {
   deviceType: "all",
   status: "all",
+  action: "all",
   search: "",
-  fromDate: "",
-  toDate: "",
   sortOrder: "desc",
   page: 1,
   pageSize: 10,
@@ -52,9 +52,8 @@ export const useActionHistory = () => {
     () => ({
       deviceType: searchParams.get("deviceType") || defaultFilters.deviceType,
       status: searchParams.get("status") || defaultFilters.status,
+      action: searchParams.get("action") || defaultFilters.action,
       search: searchParams.get("search") || defaultFilters.search,
-      fromDate: searchParams.get("fromDate") || defaultFilters.fromDate,
-      toDate: searchParams.get("toDate") || defaultFilters.toDate,
       sortOrder: (searchParams.get("sortOrder") as "asc" | "desc") || defaultFilters.sortOrder,
       page: parseInt(searchParams.get("page") || "1"),
       pageSize: parseInt(searchParams.get("pageSize") || "10"),
@@ -94,8 +93,7 @@ export const useActionHistory = () => {
         const response = await actionApi.getHistory({
           device_id: filters.deviceType,
           status: filters.status,
-          from: filters.fromDate,
-          to: filters.toDate,
+          action: filters.action,
           search: filters.search,
           page: filters.page,
           pageSize: filters.pageSize,
@@ -128,6 +126,7 @@ export const useActionHistory = () => {
       const response = await actionApi.getHistory({
         device_id: filters.deviceType,
         status: filters.status,
+        action: filters.action,
         from: filters.fromDate,
         to: filters.toDate,
         search: filters.search,

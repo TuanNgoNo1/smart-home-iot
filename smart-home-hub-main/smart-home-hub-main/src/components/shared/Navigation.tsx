@@ -1,11 +1,14 @@
-import { Home, Wifi, WifiOff, Database, History, User } from "lucide-react";
+import { Home, Wifi, WifiOff, Database, History, User, Bell } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { wsService } from "@/services/websocket";
 import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface NavigationProps {
   isConnected: boolean;
+  notificationCount?: number;
+  notificationPanel?: React.ReactNode;
 }
 
 const navItems = [
@@ -15,7 +18,7 @@ const navItems = [
   { path: "/profile", label: "Profile", icon: User },
 ];
 
-export const Navigation = ({ isConnected }: NavigationProps) => {
+export const Navigation = ({ isConnected, notificationCount = 0, notificationPanel }: NavigationProps) => {
   const location = useLocation();
   const [isHardwareOnline, setIsHardwareOnline] = useState(false);
   const lastUpdateRef = useRef(Date.now());
@@ -44,7 +47,7 @@ export const Navigation = ({ isConnected }: NavigationProps) => {
 
   return (
     <header className="dashboard-header">
-      <div className="container mx-auto px-4 py-4">
+      <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-3">
@@ -80,7 +83,31 @@ export const Navigation = ({ isConnected }: NavigationProps) => {
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Notification Bell */}
+            {notificationPanel && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
+                    <Bell className="w-5 h-5 text-muted-foreground" />
+                    {notificationCount > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-500 rounded-full animate-pulse shadow-sm">
+                        {notificationCount > 99 ? "99+" : notificationCount}
+                      </span>
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[380px] p-0 bg-card border border-border shadow-2xl rounded-2xl overflow-hidden"
+                  align="end"
+                  sideOffset={8}
+                >
+                  {notificationPanel}
+                </PopoverContent>
+              </Popover>
+            )}
+
+            {/* Connection Status */}
             <div className={`status-badge ${isFullyConnected ? 'status-badge-success' : 'status-badge-error'}`}>
               {isFullyConnected ? (
                 <>

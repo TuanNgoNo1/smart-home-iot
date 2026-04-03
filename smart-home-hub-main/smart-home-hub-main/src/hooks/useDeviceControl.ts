@@ -4,9 +4,14 @@ import { deviceApi, DeviceInfo } from "@/services/api";
 import { wsService } from "@/services/websocket";
 
 type DeviceState = "off" | "loading" | "on" | "failed";
+type DeviceMode = "manual" | "auto";
 
 interface DeviceStates {
   [key: string]: DeviceState;
+}
+
+interface DeviceModes {
+  [key: string]: DeviceMode;
 }
 
 export interface DeviceNotification {
@@ -23,10 +28,28 @@ const ACK_TIMEOUT = 10000; // 10 seconds
 
 export const useDeviceControl = () => {
   const [deviceStates, setDeviceStates] = useState<DeviceStates>({});
+  const [deviceModes, setDeviceModes] = useState<DeviceModes>({});
   const [deviceList, setDeviceList] = useState<DeviceInfo[]>([]);
-  const [notifications, setNotifications] = useState<DeviceNotification[]>([]);
+  const [notifications, setNotifications] = useState<DeviceNotification[]>(() => {
+    // Load notifications from localStorage on mount
+    try {
+      const saved = localStorage.getItem('device_notifications');
+      return saved ? JSON.parse(saved, (key, value) => {
+        // Revive Date objects
+        if (key === 'timestamp') return new Date(value);
+        return value;
+      }) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
   const initializedRef = useRef(false);
+
+  // Persist notifications to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('device_notifications', JSON.stringify(notifications));
+  }, [notifications]);
 
   // Load device states from DB on mount (for F5 reload persistence)
   useEffect(() => {
@@ -39,10 +62,13 @@ export const useDeviceControl = () => {
         setDeviceList(devices);
 
         const states: DeviceStates = {};
+        const modes: DeviceModes = {};
         devices.forEach((device) => {
           states[device.id] = device.device_state === "ON" ? "on" : "off";
+          modes[device.id] = "manual"; // Default to manual mode
         });
         setDeviceStates(states);
+        setDeviceModes(modes);
       } catch (error) {
         console.error("Failed to load device states:", error);
         // Fallback
@@ -98,6 +124,18 @@ export const useDeviceControl = () => {
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
+    localStorage.removeItem('device_notifications');
+  }, []);
+
+  const setDeviceMode = useCallback((deviceId: string, mode: DeviceMode) => {
+    setDeviceModes((prev) => ({ ...prev, [deviceId]: mode }));
+
+    // Call backend API to set mode
+    deviceApi.setMode(deviceId, mode).catch((error) => {
+      console.error('Failed to set device mode:', error);
+      // Revert on error
+      setDeviceModes((prev) => ({ ...prev, [deviceId]: prev[deviceId] || 'manual' }));
+    });
   }, []);
 
   const getDeviceName = useCallback(
@@ -157,6 +195,7 @@ export const useDeviceControl = () => {
           });
 
           toast({
+            variant: "success",
             title: "Thành công",
             description: `${deviceName} đã ${targetAction === "ON" ? "bật" : "tắt"}`,
           });
@@ -198,6 +237,11 @@ export const useDeviceControl = () => {
 
   return {
     deviceStates: legacyDeviceStates,
+    deviceModes: {
+      light: (deviceModes["led_01"] || "manual") as DeviceMode,
+      fan: (deviceModes["fan_01"] || "manual") as DeviceMode,
+      ac: (deviceModes["ac_01"] || "manual") as DeviceMode,
+    },
     toggleDevice: (type: string) => {
       // Map legacy type to device id
       const deviceIdMap: Record<string, string> = {
@@ -207,6 +251,15 @@ export const useDeviceControl = () => {
       };
       const deviceId = deviceIdMap[type] || type;
       toggleDevice(deviceId);
+    },
+    setDeviceMode: (type: string, mode: DeviceMode) => {
+      const deviceIdMap: Record<string, string> = {
+        light: "led_01",
+        fan: "fan_01",
+        ac: "ac_01",
+      };
+      const deviceId = deviceIdMap[type] || type;
+      setDeviceMode(deviceId, mode);
     },
     notifications,
     clearNotifications,

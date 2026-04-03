@@ -155,8 +155,44 @@ function handleACK(requestId, result) {
   }
 }
 
+/**
+ * POST /api/devices/mode
+ * Body: { deviceId, mode }
+ * Set device mode (manual/auto)
+ */
+const setDeviceMode = async (req, res) => {
+  const { deviceId, mode } = req.body;
+
+  if (!deviceId || !mode) {
+    return res.status(400).json({ error: 'deviceId and mode are required' });
+  }
+
+  if (!['manual', 'auto'].includes(mode)) {
+    return res.status(400).json({ error: 'mode must be manual or auto' });
+  }
+
+  if (deviceId !== 'led_01') {
+    return res.status(400).json({ error: 'Only led_01 supports auto mode' });
+  }
+
+  try {
+    const mqttHandler = require('../mqtt/mqttHandler');
+    mqttHandler.setDeviceMode(deviceId, mode);
+
+    res.json({
+      deviceId,
+      mode,
+      message: `Device mode set to ${mode}`,
+    });
+  } catch (error) {
+    console.error('Error setting device mode:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 module.exports = {
   getDevices,
   controlDevice,
+  setDeviceMode,
   handleACK,
 };

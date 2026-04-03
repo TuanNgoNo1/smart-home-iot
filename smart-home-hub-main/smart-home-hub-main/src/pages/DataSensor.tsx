@@ -6,13 +6,15 @@ import { SensorPagination } from "@/components/sensor-history/SensorPagination";
 import { ExportDropdown } from "@/components/shared/ExportDropdown";
 import { useSensorHistory } from "@/hooks/useSensorHistory";
 import { exportSensorDataToCSV, exportSensorDataToExcel } from "@/lib/export-utils";
-import { Database } from "lucide-react";
+import { Database, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { wsService } from "@/services/websocket";
 
 const DataSensor = () => {
   const [isConnected, setIsConnected] = useState(false);
-  const { data, isLoading, pagination, filters, updateFilters } = useSensorHistory();
+  const { data, isLoading, pagination, filters, updateFilters, refresh } = useSensorHistory();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     const unsub = wsService.onConnectionChange(setIsConnected);
@@ -25,6 +27,12 @@ const DataSensor = () => {
     } else {
       updateFilters({ sortBy: column, sortOrder: "desc" });
     }
+  };
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await refresh();
+    setTimeout(() => setIsRefreshing(false), 500);
   };
 
   return (
@@ -44,17 +52,29 @@ const DataSensor = () => {
             </div>
           </div>
 
-          <ExportDropdown
-            onExportCSV={() => {
-              exportSensorDataToCSV(data);
-              toast.success("Đã xuất file CSV thành công!");
-            }}
-            onExportExcel={() => {
-              exportSensorDataToExcel(data);
-              toast.success("Đã xuất file Excel thành công!");
-            }}
-            disabled={data.length === 0}
-          />
+          <div className="flex items-center gap-2">
+            <ExportDropdown
+              onExportCSV={() => {
+                exportSensorDataToCSV(data);
+                toast.success("Đã xuất file CSV thành công!");
+              }}
+              onExportExcel={() => {
+                exportSensorDataToExcel(data);
+                toast.success("Đã xuất file Excel thành công!");
+              }}
+              disabled={data.length === 0}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="gap-2"
+            >
+              <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+              <span className="hidden sm:inline">Làm mới</span>
+            </Button>
+          </div>
         </div>
         <SensorFilterBar filters={filters} onFilterChange={updateFilters} />
 
@@ -82,5 +102,10 @@ const DataSensor = () => {
     </div>
   );
 };
+
+// Helper function for className
+function cn(...classes: (string | boolean | undefined)[]) {
+  return classes.filter(Boolean).join(" ");
+}
 
 export default DataSensor;

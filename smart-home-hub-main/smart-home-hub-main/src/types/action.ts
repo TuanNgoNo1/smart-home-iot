@@ -16,9 +16,8 @@ export interface ActionRecord {
 export interface ActionHistoryFilters {
   deviceType: string; // device_id or "all"
   status: string;     // ActionStatus or "all"
+  action: string;     // "ON" | "OFF" | "all"
   search: string;
-  fromDate: string;
-  toDate: string;
   sortOrder: "asc" | "desc";
   page: number;
   pageSize: number;

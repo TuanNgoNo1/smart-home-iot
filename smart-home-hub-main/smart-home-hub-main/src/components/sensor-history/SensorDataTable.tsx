@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Copy, Check } from "lucide-react";
+import { useState } from "react";
 
 interface SensorDataTableProps {
   data: SensorRecord[];
@@ -49,6 +50,14 @@ export const SensorDataTable = ({
   sortBy,
   sortOrder,
 }: SensorDataTableProps) => {
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  const handleCopy = (timestamp: string, id: number) => {
+    navigator.clipboard.writeText(timestamp);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const renderSortIndicator = (column: "created_at" | "value") => {
     if (sortBy !== column) return null;
     return sortOrder === "asc" ? " ↑" : " ↓";
@@ -118,7 +127,7 @@ export const SensorDataTable = ({
           {data.map((record) => {
             const config = sensorConfig[record.sensor_id] || { label: record.sensor_name || record.sensor_id, unit: "", badgeClass: "" };
             return (
-              <TableRow key={record.id} className="hover:bg-muted/30 transition-colors border-b border-border/50">
+              <TableRow key={record.id} className="group hover:bg-muted/30 transition-colors border-b border-border/50">
                 <TableCell className="font-medium text-primary">
                   {record.id}
                 </TableCell>
@@ -137,7 +146,20 @@ export const SensorDataTable = ({
                   </span>
                 </TableCell>
                 <TableCell className="font-mono text-sm text-muted-foreground">
-                  {format(new Date(record.created_at), "yyyy-MM-dd HH:mm:ss")}
+                  <div className="flex items-center gap-2">
+                    <span>{format(new Date(record.created_at), "yyyy-MM-dd HH:mm:ss")}</span>
+                    <button
+                      onClick={() => handleCopy(format(new Date(record.created_at), "yyyy-MM-dd HH:mm:ss"), record.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+                      title="Copy timestamp"
+                    >
+                      {copiedId === record.id ? (
+                        <Check className="w-3 h-3 text-green-500" />
+                      ) : (
+                        <Copy className="w-3 h-3 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
                 </TableCell>
               </TableRow>
             );

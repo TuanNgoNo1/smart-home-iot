@@ -43,8 +43,8 @@ export const exportActionHistoryToCSV = (data: ActionRecord[], filename?: string
   };
 
   const actionLabels: Record<string, string> = {
-    on: "BẬT",
-    off: "TẮT",
+    on: "Turn On",
+    off: "Turn Off",
   };
 
   const statusLabels: Record<string, string> = {
@@ -123,8 +123,8 @@ export const exportActionHistoryToExcel = (data: ActionRecord[], filename?: stri
   };
 
   const actionLabels: Record<string, string> = {
-    on: "BẬT",
-    off: "TẮT",
+    on: "Turn On",
+    off: "Turn Off",
   };
 
   const statusLabels: Record<string, string> = {

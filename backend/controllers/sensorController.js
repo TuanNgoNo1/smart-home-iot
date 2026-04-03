@@ -114,8 +114,6 @@ const getSensorData = async (req, res) => {
   try {
     const {
       sensor_id,
-      from,
-      to,
       search,
       page = 1,
       pageSize = 10,
@@ -141,26 +139,17 @@ const getSensorData = async (req, res) => {
       params.push(sensor_id);
     }
 
-    if (from) {
-      conditions.push('sd.created_at >= ?');
-      params.push(from);
-    }
-
-    if (to) {
-      conditions.push('sd.created_at <= ?');
-      params.push(to);
-    }
-
     // search: tìm theo ID, giá trị, hoặc chuỗi giờ (HH:mm:ss)
     if (search) {
       conditions.push(`(
-        CAST(sd.id AS CHAR) LIKE ? 
-        OR CAST(sd.value AS CHAR) LIKE ? 
+        CAST(sd.id AS CHAR) LIKE ?
+        OR CAST(sd.value AS CHAR) LIKE ?
         OR DATE_FORMAT(sd.created_at, '%H:%i:%s') LIKE ?
         OR DATE_FORMAT(sd.created_at, '%Y-%m-%d') LIKE ?
+        OR DATE_FORMAT(sd.created_at, '%Y-%m-%d %H:%i:%s') LIKE ?
       )`);
       const searchPattern = `%${search}%`;
-      params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+      params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';

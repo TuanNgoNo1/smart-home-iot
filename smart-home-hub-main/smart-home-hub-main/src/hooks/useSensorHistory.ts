@@ -7,8 +7,6 @@ export type SensorType = "dht_temp" | "dht_hum" | "light";
 export interface SensorDataFilters {
   search: string;
   sensorType: string; // sensor_id or "all"
-  fromDate: string;
-  toDate: string;
   sortBy: "created_at" | "value";
   sortOrder: "asc" | "desc";
   page: number;
@@ -18,8 +16,6 @@ export interface SensorDataFilters {
 const defaultFilters: SensorDataFilters = {
   search: "",
   sensorType: "all",
-  fromDate: "",
-  toDate: "",
   sortBy: "created_at",
   sortOrder: "desc",
   page: 1,
@@ -50,8 +46,6 @@ export const useSensorHistory = () => {
     () => ({
       search: searchParams.get("search") || defaultFilters.search,
       sensorType: searchParams.get("sensorType") || defaultFilters.sensorType,
-      fromDate: searchParams.get("fromDate") || defaultFilters.fromDate,
-      toDate: searchParams.get("toDate") || defaultFilters.toDate,
       sortBy: (searchParams.get("sortBy") as "created_at" | "value") || defaultFilters.sortBy,
       sortOrder: (searchParams.get("sortOrder") as "asc" | "desc") || defaultFilters.sortOrder,
       page: parseInt(searchParams.get("page") || "1"),
@@ -85,39 +79,42 @@ export const useSensorHistory = () => {
   );
 
   // Fetch data from backend API when filters change
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const response = await sensorApi.getSensorData({
-          sensor_id: filters.sensorType,
-          from: filters.fromDate,
-          to: filters.toDate,
-          search: filters.search,
-          page: filters.page,
-          pageSize: filters.pageSize,
-          sortBy: filters.sortBy,
-          sortOrder: filters.sortOrder,
-        });
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await sensorApi.getSensorData({
+        sensor_id: filters.sensorType,
+        search: filters.search,
+        page: filters.page,
+        pageSize: filters.pageSize,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+      });
 
-        setData(response.data);
-        setPagination({
-          total: response.total,
-          page: response.page,
-          pageSize: response.pageSize,
-          totalPages: response.totalPages,
-        });
-      } catch (error) {
-        console.error("Failed to fetch sensor data:", error);
-        setData([]);
-        setPagination({ total: 0, page: 1, pageSize: 10, totalPages: 0 });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
+      setData(response.data);
+      setPagination({
+        total: response.total,
+        page: response.page,
+        pageSize: response.pageSize,
+        totalPages: response.totalPages,
+      });
+    } catch (error) {
+      console.error("Failed to fetch sensor data:", error);
+      setData([]);
+      setPagination({ total: 0, page: 1, pageSize: 10, totalPages: 0 });
+    } finally {
+      setIsLoading(false);
+    }
   }, [filters]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Manual refresh function
+  const refresh = useCallback(() => {
+    return loadData();
+  }, [loadData]);
 
   return {
     data,
@@ -126,5 +123,6 @@ export const useSensorHistory = () => {
     filters,
     updateFilters,
     sensorList,
+    refresh,
   };
 };

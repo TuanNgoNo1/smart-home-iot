@@ -83,7 +83,7 @@ export const NotificationPanel = ({ notifications, onClear }: NotificationPanelP
   });
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-4 h-[400px] flex flex-col shadow-lg">
+    <div className="bg-card rounded-2xl p-4 max-h-[420px] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

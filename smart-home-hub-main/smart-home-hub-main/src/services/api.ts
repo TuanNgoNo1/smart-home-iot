@@ -158,6 +158,13 @@ export const deviceApi = {
       method: 'POST',
       body: JSON.stringify({ deviceId, action }),
     }),
+
+  /** POST /api/devices/mode - Set device mode (manual/auto) */
+  setMode: (deviceId: string, mode: 'manual' | 'auto') =>
+    request<{ deviceId: string; mode: string; message: string }>('/devices/mode', {
+      method: 'POST',
+      body: JSON.stringify({ deviceId, mode }),
+    }),
 };
 
 // ============================================
@@ -179,8 +186,7 @@ export const actionApi = {
   getHistory: (filters: {
     device_id?: string;
     status?: string;
-    from?: string;
-    to?: string;
+    action?: string;
     search?: string;
     page?: number;
     pageSize?: number;

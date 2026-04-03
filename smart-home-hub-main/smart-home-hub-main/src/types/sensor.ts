@@ -12,8 +12,6 @@ export interface SensorRecord {
 export interface SensorDataFilters {
   search: string;
   sensorType: string; // sensor_id or "all"
-  fromDate: string;
-  toDate: string;
   sortBy: "created_at" | "value";
   sortOrder: "asc" | "desc";
   page: number;

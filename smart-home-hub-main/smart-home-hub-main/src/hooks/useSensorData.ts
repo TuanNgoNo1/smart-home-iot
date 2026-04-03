@@ -21,9 +21,26 @@ export const useSensorData = () => {
   });
 
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [notifications, setNotifications] = useState<DeviceNotification[]>([]);
+  const [notifications, setNotifications] = useState<DeviceNotification[]>(() => {
+    // Load notifications from localStorage on mount
+    try {
+      const saved = localStorage.getItem('sensor_notifications');
+      return saved ? JSON.parse(saved, (key, value) => {
+        // Revive Date objects
+        if (key === 'timestamp') return new Date(value);
+        return value;
+      }) : [];
+    } catch {
+      return [];
+    }
+  });
   const [isLoading, setIsLoading] = useState(true);
   const initializedRef = useRef(false);
+
+  // Persist notifications to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('sensor_notifications', JSON.stringify(notifications));
+  }, [notifications]);
 
   const addNotification = useCallback(
     (notification: Omit<DeviceNotification, "id" | "timestamp">) => {
@@ -39,6 +56,7 @@ export const useSensorData = () => {
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
+    localStorage.removeItem('sensor_notifications');
   }, []);
 
   // Load initial data from API

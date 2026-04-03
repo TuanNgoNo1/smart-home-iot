@@ -12,6 +12,43 @@ const THRESHOLDS = {
   light: { max: 2000, unit: 'lux', name: 'Ánh sáng' },
 };
 
+// AUTO mode threshold
+const AUTO_LIGHT_THRESHOLD = 500; // lux
+
+// LED is always in AUTO mode
+const deviceModes = {
+  led_01: 'auto', // Always auto for LED
+};
+
+// Track last sensor data time to detect hardware reconnect
+let lastSensorDataTime = null;
+const RECONNECT_THRESHOLD = 10000; // 10 seconds - if no data for 10s, consider it disconnected
+
+/**
+ * Sync device states to hardware after reconnect
+ */
+async function syncDeviceStates() {
+  try {
+    console.log('🔄 Syncing device states to hardware...');
+    const [devices] = await db.query('SELECT id, device_state FROM devices');
+
+    for (const device of devices) {
+      const action = device.device_state; // 'ON' or 'OFF'
+      const requestId = `sync_${Date.now()}_${device.id}`;
+
+      console.log(`  → Syncing ${device.id}: ${action}`);
+      publishDeviceCommand(requestId, device.id, action);
+
+      // Small delay between commands to avoid overwhelming hardware
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    console.log('✅ Device state sync completed');
+  } catch (error) {
+    console.error('❌ Error syncing device states:', error.message);
+  }
+}
+
 /**
  * Kết nối MQTT Broker
  */
@@ -91,6 +128,18 @@ async function handleSensorData(payload) {
   const now = new Date();
   const { temp, humidity, light } = payload;
 
+  // Detect hardware reconnect
+  const timeSinceLastData = lastSensorDataTime ? (now.getTime() - lastSensorDataTime.getTime()) : Infinity;
+  const isReconnect = timeSinceLastData > RECONNECT_THRESHOLD;
+
+  if (isReconnect) {
+    console.log('🔌 Hardware reconnect detected! Syncing device states...');
+    // Sync device states after a short delay to let hardware stabilize
+    setTimeout(() => syncDeviceStates(), 1000);
+  }
+
+  lastSensorDataTime = now;
+
   try {
     // INSERT 3 bản ghi sensor_data
     const values = [];
@@ -139,8 +188,71 @@ async function handleSensorData(payload) {
       });
     }
 
+    // AUTO mode logic for LED (light sensor < 500 lux)
+    if (light !== undefined && deviceModes.led_01 === 'auto') {
+      await handleAutoLightControl(light);
+    }
+
   } catch (error) {
     console.error('Error saving sensor data:', error.message);
+  }
+}
+
+/**
+ * AUTO mode logic: Tự động bật/tắt đèn dựa trên ánh sáng
+ */
+async function handleAutoLightControl(lightValue) {
+  try {
+    // Get current LED state from DB
+    const [rows] = await db.query('SELECT device_state FROM devices WHERE id = ?', ['led_01']);
+    if (rows.length === 0) return;
+
+    const currentState = rows[0].device_state;
+    let targetAction = null;
+
+    // Determine target action based on light threshold
+    if (lightValue < AUTO_LIGHT_THRESHOLD && currentState === 'OFF') {
+      targetAction = 'ON';
+      console.log(`🤖 AUTO: Light ${lightValue} lux < ${AUTO_LIGHT_THRESHOLD} → Turn LED ON`);
+    } else if (lightValue >= AUTO_LIGHT_THRESHOLD && currentState === 'ON') {
+      targetAction = 'OFF';
+      console.log(`🤖 AUTO: Light ${lightValue} lux >= ${AUTO_LIGHT_THRESHOLD} → Turn LED OFF`);
+    }
+
+    // If action needed, publish command
+    if (targetAction) {
+      const requestId = `auto_${Date.now()}`;
+      const now = new Date();
+
+      // Insert action_history
+      await db.query(
+        'INSERT INTO action_history (request_id, device_id, action, status, created_at) VALUES (?, ?, ?, ?, ?)',
+        [requestId, 'led_01', targetAction, 'SUCCESS', now]
+      );
+
+      // Update device state
+      await db.query(
+        'UPDATE devices SET device_state = ? WHERE id = ?',
+        [targetAction, 'led_01']
+      );
+
+      // Publish MQTT command
+      publishDeviceCommand(requestId, 'led_01', targetAction);
+
+      // Broadcast to frontend
+      wsHandler.broadcast({
+        type: 'device_update',
+        data: {
+          deviceId: 'led_01',
+          device_state: targetAction,
+          requestId,
+          status: 'SUCCESS',
+          auto: true // Flag to indicate this was auto-triggered
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error in auto light control:', error.message);
   }
 }
 
@@ -184,7 +296,32 @@ function publishDeviceCommand(requestId, deviceId, action) {
   });
 }
 
+/**
+ * Set device mode (manual/auto)
+ */
+function setDeviceMode(deviceId, mode) {
+  if (deviceId === 'led_01' && ['manual', 'auto'].includes(mode)) {
+    deviceModes[deviceId] = mode;
+    console.log(`🔧 Device mode updated: ${deviceId} → ${mode}`);
+
+    // Broadcast mode change to frontend
+    wsHandler.broadcast({
+      type: 'device_mode_update',
+      data: { deviceId, mode }
+    });
+  }
+}
+
+/**
+ * Get device mode
+ */
+function getDeviceMode(deviceId) {
+  return deviceModes[deviceId] || 'manual';
+}
+
 module.exports = {
   connect,
   publishDeviceCommand,
+  setDeviceMode,
+  getDeviceMode,
 };

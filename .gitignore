@@ -1,26 +1,84 @@
-# Node modules
+# ============================================
+# Dependencies
+# ============================================
 node_modules/
 npm-debug.log
 yarn-error.log
+package-lock.json
+yarn.lock
 
-# Environment variables
+# ============================================
+# Environment Variables
+# ============================================
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Build output
+# ============================================
+# Build Output
+# ============================================
 dist/
 dist-ssr/
 build/
 out/
+*.tsbuildinfo
 
-# OS generated files
+# ============================================
+# Documentation Files (EXCLUDE - Except README.md)
+# ============================================
+# Markdown files (except README.md)
+*.md
+!README.md
+
+# PDF files
+*.pdf
+
+# Word documents
+*.doc
+*.docx
+~$*.doc*
+
+# LaTeX files
+*.tex
+*.aux
+*.log
+*.out
+*.toc
+
+# Images used for documentation
+*mockup*.png
+*mockup*.jpg
+*screenshot*.png
+*screenshot*.jpg
+dashboard_redesign*.png
+sd*.png
+*.jpg
+*.jpeg
+*.png
+!smart-home-hub-main/smart-home-hub-main/public/**/*.png
+!smart-home-hub-main/smart-home-hub-main/public/**/*.jpg
+!smart-home-hub-main/smart-home-hub-main/public/**/*.svg
+!smart-home-hub-main/smart-home-hub-main/src/assets/**/*.png
+!smart-home-hub-main/smart-home-hub-main/src/assets/**/*.jpg
+!smart-home-hub-main/smart-home-hub-main/src/assets/**/*.svg
+
+# ============================================
+# OS Generated Files
+# ============================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
+# ============================================
 # IDE / Editor
+# ============================================
 .vscode/
 .idea/
 *.suo
@@ -28,3 +86,34 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+*~
+
+# ============================================
+# Logs
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+.nyc_output/
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.cache
+
+# ============================================
+# Claude Code
+# ============================================
+.claude/

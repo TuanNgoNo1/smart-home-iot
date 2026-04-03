@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Power, Lightbulb, Fan, Snowflake } from "lucide-react";
+import { Power, Lightbulb, Fan, Snowflake, Copy, Check } from "lucide-react";
+import { useState } from "react";
 
 interface ActionDataTableProps {
   data: ActionRecord[];
@@ -34,8 +35,8 @@ const deviceConfig: Record<string, { label: string; icon: React.ReactNode }> = {
 };
 
 const actionConfig: Record<string, { label: string; colorClass: string }> = {
-  ON: { label: "BẬT", colorClass: "text-emerald-600" },
-  OFF: { label: "TẮT", colorClass: "text-muted-foreground" },
+  ON: { label: "Turn On", colorClass: "text-emerald-600" },
+  OFF: { label: "Turn Off", colorClass: "text-red-600" },
 };
 
 const statusConfig: Record<string, { label: string; badgeClass: string }> = {
@@ -58,6 +59,14 @@ const statusConfig: Record<string, { label: string; badgeClass: string }> = {
 };
 
 export const ActionDataTable = ({ data, isLoading }: ActionDataTableProps) => {
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  const handleCopy = (timestamp: string, id: number) => {
+    navigator.clipboard.writeText(timestamp);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   if (isLoading) {
     return (
       <div className="bg-card rounded-xl border border-border overflow-hidden shadow-lg">
@@ -114,7 +123,7 @@ export const ActionDataTable = ({ data, isLoading }: ActionDataTableProps) => {
             const status = statusConfig[record.status] || { label: record.status, badgeClass: "" };
             
             return (
-              <TableRow key={record.id} className="hover:bg-muted/30 transition-colors border-b border-border/50">
+              <TableRow key={record.id} className="group hover:bg-muted/30 transition-colors border-b border-border/50">
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {record.id}
                 </TableCell>
@@ -141,7 +150,20 @@ export const ActionDataTable = ({ data, isLoading }: ActionDataTableProps) => {
                   </Badge>
                 </TableCell>
                 <TableCell className="font-mono text-sm text-muted-foreground">
-                  {format(new Date(record.created_at), "yyyy-MM-dd HH:mm:ss")}
+                  <div className="flex items-center gap-2">
+                    <span>{format(new Date(record.created_at), "yyyy-MM-dd HH:mm:ss")}</span>
+                    <button
+                      onClick={() => handleCopy(format(new Date(record.created_at), "yyyy-MM-dd HH:mm:ss"), record.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+                      title="Copy timestamp"
+                    >
+                      {copiedId === record.id ? (
+                        <Check className="w-3 h-3 text-green-500" />
+                      ) : (
+                        <Copy className="w-3 h-3 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
                 </TableCell>
               </TableRow>
             );
